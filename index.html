@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Tic Tac Toe !</title>
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="js/jquery-3.2.1.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+  </head>
+  <body>
+    <h3 align="center">This is a tictactoe example with socket.io c: <p class="pull-right"><span id="online" class="badge"></span> Online </p></h3>
+    <hr/>
+    <div class="col-md-12" align="center">
+      <a href="#" onclick="start()" class="btn btn-primary">Start</a>
+      <hr/>
+      <table class="caption-style-1">
+        <tr>
+          <td id="00" style="border-right:solid;border-bottom:solid"><a href="#" onclick="play(0,0)" onclick="play(0,0)"><img src="img/white.png" alt="100" width ="100px"></a></td>
+          <td id="01" style="border-right:solid"><a href="#" onclick="play(0,1)"><img src="img/white.png" alt="100" width ="100px"></a></td>
+          <td id="02" style="border-left:solid"><a href="#" onclick="play(0,2)"><img src="img/white.png" alt="100" width ="100px"></a></td>
+        </tr>
+        <tr>
+          <td id="10" style="border-right:solid"><a href="#" onclick="play(1,0)"><img src="img/white.png" alt="100" width ="100px"></a></td>
+          <td id="11" style="border:solid"><a href="#" onclick="play(1,1)"><img src="img/white.png" alt="100" width ="100px"></a></td>
+          <td id="12" style="border-top:solid"><a href="#" onclick="play(1,2)"><img src="img/white.png" alt="100" width ="100px"></a></td>
+        </tr>
+        <tr>
+          <td id="20" style="border-right:solid;border-top:solid"><a href="#" onclick="play(2,0)"><img src="img/white.png" alt="100" width ="100px"></a></td>
+          <td id="21" style="border-right:solid"><a href="#" onclick="play(2,1)"><img src="img/white.png" alt="100" width ="100px"></a></td>
+          <td id="22" style="border-top:solid"><a href="#" onclick="play(2,2)"><img src="img/white.png" alt="100" width ="100px"></a></td>
+        </tr>
+      </table>
+      <h3 id="state"></h3>
+    </div>
+
+
+
+  </body>
+</html>
+<script>
+  var client_baton = ""
+  var socket = io.connect('http://201.239.179.89:8080/')
+  socket.on('turn',(data)=>{
+    console.log(data)
+  })
+  socket.on('online',(data)=>{
+    document.getElementById('online').innerHTML = data.online
+  })
+  socket.on('table',(table)=>{
+    renderTablePlayable(table)
+  })
+
+  socket.on('win',(data)=>{
+    document.body.style.cursor = 'auto'
+    renderTableUnplayable(data.table)
+    if(data.win === socket.id){
+      document.getElementById('state').innerHTML = `You Win !`
+    }else{
+      document.getElementById('state').innerHTML = `You Lose :c`
+    }
+
+    if(data.player === 1){
+      document.getElementById(data.positionWin.p1).innerHTML = `<img src="img/red-x.png" alt="100" width ="100px">`
+      document.getElementById(data.positionWin.p2).innerHTML = `<img src="img/red-x.png" alt="100" width ="100px">`
+      document.getElementById(data.positionWin.p3).innerHTML = `<img src="img/red-x.png" alt="100" width ="100px">`
+    }else if(data.player === -1){
+      document.getElementById(data.positionWin.p1).innerHTML = `<img src="img/red-o.png" alt="100" width ="100px">`
+      document.getElementById(data.positionWin.p2).innerHTML = `<img src="img/red-o.png" alt="100" width ="100px">`
+      document.getElementById(data.positionWin.p3).innerHTML = `<img src="img/red-o.png" alt="100" width ="100px">`
+    }
+  })
+
+  socket.on('deadEnd',(data)=>{
+    document.body.style.cursor = 'auto'
+    document.getElementById('state').innerHTML = `Nobody Win :/`
+    renderTableUnplayable(data.table)
+  })
+
+  socket.on('turn',(baton) =>{
+    client_baton = baton
+    if(socket.id == baton){
+      document.getElementById('state').innerHTML = `Is your turn!`
+      document.body.style.cursor = 'auto'
+      console.log(`turn of me`)
+    }else{
+      document.getElementById('state').innerHTML = `Is turn of your oponent...`
+      document.body.style.cursor = 'wait'
+      console.log(`turn of oponent`)
+    }
+  })
+
+  start = () => {
+    socket.emit('start')
+  }
+
+  play = (i,j) =>{
+    if(client_baton === socket.id)
+      socket.emit('play',{i,j})
+  }
+
+  renderTablePlayable = (table) =>{
+    for(let i = 0; i < 3; i++){
+      for(let j = 0; j < 3; j++){
+        if(table[i][j]===1)
+          document.getElementById(`${i}${j}`).innerHTML = `<img src="img/x.png" alt="100" width ="100px">`
+        if(table[i][j]===-1)
+          document.getElementById(`${i}${j}`).innerHTML = `<img src="img/o.png" alt="100" width ="100px">`
+        if(table[i][j]===0)
+          document.getElementById(`${i}${j}`).innerHTML = `<a href="#" onclick="play(${i},${j})" onclick="play(0,0)"><img src="img/white.png" alt="100" width ="100px"></a>`
+      }
+    }
+  }
+
+  renderTableUnplayable = (table) =>{
+    for(let i = 0; i < 3; i++){
+      for(let j = 0; j < 3; j++){
+        if(table[i][j]===1)
+          document.getElementById(`${i}${j}`).innerHTML = `<img src="img/x.png" alt="100" width ="100px">`
+        if(table[i][j]===-1)
+          document.getElementById(`${i}${j}`).innerHTML = `<img src="img/o.png" alt="100" width ="100px">`
+        if(table[i][j]===0)
+          document.getElementById(`${i}${j}`).innerHTML = `<img src="img/white.png" alt="100" width ="100px">`
+      }
+    }
+  }
+
+</script>
